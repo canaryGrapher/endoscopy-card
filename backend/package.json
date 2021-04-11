@@ -1,0 +1,21 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "Backend for the Endoscopy Card project",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "development": ""
+    },
+    "repository": {
+        "url": "https://github.com/canaryGrapher/endoscopy-card.git",
+        "type": "git"
+    },
+    "author": "Yash Aryan",
+    "license": "MIT",
+    "dependencies": {
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "mongoose": "^5.12.3"
+    }
+}
