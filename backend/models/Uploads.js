@@ -18,6 +18,11 @@ const UploadsSchema = new mongoose.Schema({
         uploadTime: {
             type: Date,
             default: Date.now,
+        },
+        file: {
+            data: Buffer,
+            contentType: String,
+            required: true
         }
     }]
 });

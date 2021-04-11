@@ -1,4 +1,7 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+
+//making use of environment variables
 const env = require('dotenv').config()
 
 //importing modules
@@ -11,6 +14,12 @@ const PORT = process.env.PORT || 3002;
 //conncting to services
 const app = express();
 connectDB();
+
+//using middleware in express
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 //testing endpoint
 app.get('/', (req, res) => {
