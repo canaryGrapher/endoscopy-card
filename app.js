@@ -22,8 +22,8 @@ app.get('/', (req, res) => {
 });
 
 // Defining routes
-app.use('api/doctor', require('./routes/doctor'))
-app.use('api/patient', require('./routes/doctor'))
+app.use('/api/doctor', require('./routes/doctor'))
+app.use('/api/patient', require('./routes/patient'))
 app.use('/api/admin', require('./routes/admin'))
 
 
