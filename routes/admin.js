@@ -2,6 +2,25 @@ const express = require("express");
 const auth = require("../middleware/auth");
 const router = express.Router();
 const { check, validationResult } = require("express-validator");
+const fs = require("fs");
+const path = require("path");
+const wfs = require("./nextcloud");
+
+//configuration file for multer
+const multer = require("multer");
+// const storage = multer.diskStorage({
+//   destination: async (req, file, cb) => {
+//     await req.body;
+//     cb(null, "./routes/uploads");
+//   },
+//   filename: async (req, file, cb) => {
+//     const originalFileName = file.originalname;
+//     const newFileName = Date.now() + "_" + originalFileName;
+//     cb(null, newFileName);
+//   },
+// });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 //array containing Country names
 const countryList = [
@@ -262,6 +281,7 @@ const GenderArray = ["MALE", "FEMALE", "OTHER"];
 const Doctor = require("../models/Doctor");
 const Upload = require("../models/Upload");
 const Patient = require("../models/Patient");
+const { update } = require("../models/Doctor");
 
 // @route   POST api/admin/create/doctor
 // @desc    Create a new doctor account
@@ -410,6 +430,9 @@ router.post(
       const saveInfo = await patient.save();
       const newDataLink = new Upload({ hospitalNo: hospital_no });
       await newDataLink.save();
+      wfs.mkdir(`${hospital_no}`, function (err) {
+        if (err) throw err;
+      });
       res
         .status(201)
         .json({ msg: "Added patient to the database.", data: saveInfo });
@@ -527,7 +550,7 @@ router.put(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    console.log(req.body)
+    console.log(req.body);
     const { report } = req.body;
     try {
       const uploadedReport = await Upload.findOneAndUpdate(
@@ -545,20 +568,87 @@ router.put(
   }
 );
 
-// @route   POST api/admin/upload/scans
+// @route   POST api/admin/upload/scans/:hospital_id
 // @desc    Upload scans of endoscopy
 // @access  Private
-router.post("/upload/scans", auth, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+router.post(
+  "/upload/scans/:hospital_id",
+  // [
+  // auth,
+  // [check().not().isEmpty(), check().not().isEmpty()],
+  upload.single("file"),
+  // ],
+  async (req, res) => {
+    try {
+      //check if there was error in upload
+      if (!upload.err) {
+        //check if the request has an image or not
+        if (!req.file || req.file.length === 0 || req.file.length > 5) {
+          res.json({
+            success: false,
+            message: "You must provide at least 1 file",
+          });
+        } else {
+          let patientUpload = await Upload.findOne({
+            hospitalNo: req.params.hospital_id,
+          });
+
+          //check if the patient exists in the database
+          if (patientUpload) {
+            const fileObject = {
+              data: req.file.buffer,
+              contentType: req.file.mimetype,
+            };
+            const newScanUpload = {
+              scanName: req.body.scanName,
+              scanTime: req.body.scanTime,
+              file: fileObject,
+            };
+            const fileUpload = {
+              ...patientUpload,
+              scans: patientUpload.scans.unshift(newScanUpload),
+              numberOfUploads: patientUpload.numberOfUploads++,
+            };
+            const doctorUpdate = await Upload.findOneAndUpdate(
+              { hospitalNo: req.params.hospital_id },
+              { $set: updatedDoc },
+              { new: false }
+            );
+            console.log(updatedDoc);
+            res.status(200).json(doctorUpdate);
+          } else {
+            res
+              .status(400)
+              .json({ msg: "That patient does not exist in the database" });
+          }
+
+          // const obj = {
+          //   name: req.body.name,
+          //   desc: req.body.desc,
+          //   img: {
+          //     data: fs.readFileSync(
+          //       path.join(__dirname + "/uploads/" + req.file.filename)
+          //     ),
+          //     contentType: "image/png",
+          //   },
+          // };
+          // const data = fs.readFileSync(
+          //   "./routes/uploads/1621709841312_1024x768.png",
+          //   {
+          //     encoding: "utf8",
+          //     flag: "r",
+          //   }
+          // );
+        }
+      } else {
+        throw "Error in Processing the file";
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Server Error");
+    }
   }
-  try {
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server Error");
-  }
-});
+);
 
 // @route   DELETE api/admin/delete/scan/:scan_id
 // @desc    Delete a particular scan from the database

@@ -14,6 +14,10 @@ const UploadSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  numberOfUploads: {
+    type: Number,
+    default: 0,
+  },
   scans: [
     {
       scanName: {
@@ -30,10 +34,12 @@ const UploadSchema = new mongoose.Schema({
         default: Date.now,
       },
       file: {
-        type: Buffer,
+        data: Buffer,
         contentType: String,
-        required: true,
       },
+      MimeType: {
+
+      }
     },
   ],
 });
