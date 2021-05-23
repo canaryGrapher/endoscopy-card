@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require('cors')
 //making use of environment variables
 const env = require("dotenv").config();
 //importing modules
@@ -12,6 +13,7 @@ connectDB();
 
 //Initialize middlewares
 app.use(express.json({ extended: false }));
+app.use(cors())
 
 //testing endpoint
 app.get("/", (req, res) => {

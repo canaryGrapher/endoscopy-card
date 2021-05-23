@@ -416,9 +416,6 @@ router.post(
       const saveInfo = await patient.save();
       const newDataLink = new Upload({ hospitalNo: hospital_no });
       await newDataLink.save();
-      wfs.mkdir(`${hospital_no}`, function (err) {
-        if (err) throw err;
-      });
       res
         .status(201)
         .json({ msg: "Added patient to the database.", data: saveInfo });

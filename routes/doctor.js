@@ -1,6 +1,7 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 const { check, validationResult } = require("express-validator");
 
 //array containing Country names
@@ -262,24 +263,6 @@ const GenderArray = ["MALE", "FEMALE", "OTHER"];
 const Doctor = require("../models/Doctor");
 const Patient = require("../models/Patient");
 
-// @route   GET api/doctor/details
-// @desc    Get the doctor's details
-// @access  Private
-router.get("/details", auth, async (req, res) => {
-  try {
-    //find the details of the doctor in the database using the provided email
-    const doctorDetails = await Doctor.findById(req.user.email);
-    if (doctorDetails) {
-      res.status(200).json(doctorDetails);
-    } else {
-      res.status(204).json({ msg: "No user found" });
-    }
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server Error");
-  }
-});
-
 // @route   POST api/doctor/login
 // @desc    Verify the credentials and authenticate the user
 // @access  Private
@@ -294,136 +277,53 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    const { email, token } = req.body;
     try {
-      //code to validate the google token and the username and add it to Redis-server
-      res.status(200).json({ msg: "Login Successful" });
-    } catch (error) {
-      console.error(error.message);
-      res.status(500).send("Server Error");
-    }
-  }
-);
-
-// @route   POST api/doctor/create/patient
-// @desc    Create a new patient account
-// @access  Private
-router.post(
-  "/create/patient",
-  [
-    auth,
-    [
-      check("hospital_no", "Hospital number is necessary").not().isEmpty(),
-      check("patient_name", "Patient name is necesary").not().isEmpty().trim(),
-      check("date_of_birth", "Patient name is necesary").not().isEmpty(),
-      check("sex", "Enter a valid gender").not().isEmpty().isIn(GenderArray),
-      check("address", "Address is required").not().isEmpty().trim(),
-      check("mobile_no", "Phone Number is required").not().isEmpty(),
-      check("email", "Invalid email address").isEmail().normalizeEmail(),
-      check("country", "Enter a valid country")
-        .not()
-        .isEmpty()
-        .isIn(countryList),
-    ],
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const {
-      hospital_no,
-      patient_name,
-      date_of_birth,
-      sex,
-      address,
-      mobile_no,
-      email,
-      country,
-    } = req.body;
-
-    try {
-      const PatientDetails = {
-        hospitalNo: hospital_no,
-        name: patient_name,
-        dob: date_of_birth,
-        sex: sex,
-        mobile: mobile_no,
-        email: email,
-        address: address,
-        country: country,
+      let user = await Doctor.findOne({ email: email });
+      if (!user) {
+        return res.status(400).json({ msg: "User does not exist" });
+      }
+      const payload = {
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          hospital: user.hospital,
+          token: token,
+        },
       };
-      const patient = new Patient(PatientDetails);
-      const saveInfo = await patient.save();
-      const newDataLink = new Upload({ hospitalNo: hospital_no });
-      await newDataLink.save();
-      res
-        .status(201)
-        .json({ msg: "Added patient to the database.", data: saveInfo });
-    } catch (error) {
-      if (error.name === "MongoError" && error.code === 11000) {
-        res.status(409).json({ msg: "Entry already exists" });
-      } else {
-        console.error(error.message);
-        res.status(500).send("Server Error");
-      }
-    }
-  }
-);
-
-// @route   PUT api/doctor/edit/patient/:hospital_id
-// @desc    Change patient details
-// @access  Private
-router.put(
-  "/edit/patient/:hospital_id",
-  [
-    auth,
-    [
-      check("sex", "Inavlid Gender type").isIn(["MALE", "FEMALE", "OTHER"]),
-      check("country", "Enter a valid country").isIn(countryList),
-    ],
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const {
-      patient_name,
-      date_of_birth,
-      sex,
-      address,
-      mobile_no,
-      email,
-      country,
-    } = req.body;
-    try {
-      let UpdatedPatient = {};
-      if (patient_name) UpdatedPatient.name = patient_name;
-      if (date_of_birth) UpdatedPatient.dob = date_of_birth;
-      if (sex) UpdatedPatient.sex = sex;
-      if (address) UpdatedPatient.address = address;
-      if (mobile_no) UpdatedPatient.mobile = mobile_no;
-      if (email) UpdatedPatient.email = email;
-      if (country) UpdatedPatient.country = country;
-
-      const patient = await Patient.findOne({
-        hospitalNo: req.params.hospital_id,
-      });
-      if (patient) {
-        const patientUpdate = await Patient.findOneAndUpdate(
-          { hospitalNo: req.params.hospital_id },
-          { $set: UpdatedPatient },
-          { new: true }
-        );
-        res.status(200).json(patientUpdate);
-      } else {
-        res.status(200).json({ msg: "Nothing to update" });
-      }
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: 360000 },
+        (err, token) => {
+          if (err) throw err;
+          res.status(200).json({ token });
+        }
+      );
     } catch (error) {
       console.error(error.message);
       res.status(500).send("Server Error");
     }
   }
 );
+
+// @route   GET api/doctor/details
+// @desc    Get the doctor's details
+// @access  Private
+router.get("/details", auth, async (req, res) => {
+  try {
+    //find the details of the doctor in the database using the provided email
+    const doctorDetails = await Doctor.findById(req.user.id);
+    if (doctorDetails) {
+      res.status(200).json(doctorDetails);
+    } else {
+      res.status(204).json({ msg: "No user found" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
 
 module.exports = router;
