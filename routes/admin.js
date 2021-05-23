@@ -2,23 +2,9 @@ const express = require("express");
 const auth = require("../middleware/auth");
 const router = express.Router();
 const { check, validationResult } = require("express-validator");
-const fs = require("fs");
-const path = require("path");
-const wfs = require("./nextcloud");
 
 //configuration file for multer
 const multer = require("multer");
-// const storage = multer.diskStorage({
-//   destination: async (req, file, cb) => {
-//     await req.body;
-//     cb(null, "./routes/uploads");
-//   },
-//   filename: async (req, file, cb) => {
-//     const originalFileName = file.originalname;
-//     const newFileName = Date.now() + "_" + originalFileName;
-//     cb(null, newFileName);
-//   },
-// });
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -573,11 +559,16 @@ router.put(
 // @access  Private
 router.post(
   "/upload/scans/:hospital_id",
-  // [
-  // auth,
-  // [check().not().isEmpty(), check().not().isEmpty()],
-  upload.single("file"),
-  // ],
+  [
+    auth,
+    [
+      check("scanName", "Please provide a name for this file").not().isEmpty(),
+      check("scanTime", "Please provide the time this scan was done")
+        .not()
+        .isEmpty(),
+    ],
+    upload.single("file"),
+  ],
   async (req, res) => {
     try {
       //check if there was error in upload
@@ -604,41 +595,24 @@ router.post(
               scanTime: req.body.scanTime,
               file: fileObject,
             };
+            const newFileObject = patientUpload.scans.unshift(newScanUpload);
             const fileUpload = {
               ...patientUpload,
-              scans: patientUpload.scans.unshift(newScanUpload),
-              numberOfUploads: patientUpload.numberOfUploads++,
+              scans: newFileObject,
+              numberOfUploads: newFileObject.length,
             };
             const doctorUpdate = await Upload.findOneAndUpdate(
               { hospitalNo: req.params.hospital_id },
-              { $set: updatedDoc },
+              { $set: fileUpload },
               { new: false }
             );
-            console.log(updatedDoc);
-            res.status(200).json(doctorUpdate);
+            console.log(doctorUpdate);
+            res.status(200).json({ msg: "File Uploaded" });
           } else {
             res
               .status(400)
               .json({ msg: "That patient does not exist in the database" });
           }
-
-          // const obj = {
-          //   name: req.body.name,
-          //   desc: req.body.desc,
-          //   img: {
-          //     data: fs.readFileSync(
-          //       path.join(__dirname + "/uploads/" + req.file.filename)
-          //     ),
-          //     contentType: "image/png",
-          //   },
-          // };
-          // const data = fs.readFileSync(
-          //   "./routes/uploads/1621709841312_1024x768.png",
-          //   {
-          //     encoding: "utf8",
-          //     flag: "r",
-          //   }
-          // );
         }
       } else {
         throw "Error in Processing the file";
@@ -650,11 +624,33 @@ router.post(
   }
 );
 
-// @route   DELETE api/admin/delete/scan/:scan_id
+// @route   DELETE api/admin/delete/scan/:hospital_id/:scan_id
 // @desc    Delete a particular scan from the database
 // @access  Private
-router.delete("/delete/scan/:scan_id", auth, async (req, res) => {
+router.delete("/delete/scan/:hospital_id/:scan_id", auth, async (req, res) => {
   try {
+    const patient = await Upload.findOne({
+      hospitalNo: req.params.hospital_id,
+    });
+
+    //search for the scan and remove it if it matches
+    const filteredArray = patient.scans.filter((scan) => {
+      return scan._id != req.params.scan_id;
+    });
+    // altering the object if the scan_id patched
+    if (filteredArray.length != patient.scans.length) {
+      const newUploadObject = {
+        scans: filteredArray,
+        numberOfUploads: filteredArray.length,
+      };
+      const updatedList = await Upload.findOneAndUpdate(
+        { hospitalNo: req.params.hospital_id },
+        newUploadObject
+      );
+      res.status(200).json({ msg: "Scan Deleted" });
+    } else {
+      res.status(200).json({ msg: "File not found" });
+    }
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");

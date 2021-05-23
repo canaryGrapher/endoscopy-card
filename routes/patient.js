@@ -68,7 +68,14 @@ router.get("/report/:hospital_id", auth, async (req, res) => {
 // @access  Private
 router.get("/scans/:hospital_id", auth, async (req, res) => {
   try {
-    res.status(200).json({ msg: "Bla" });
+    const patientScans = await Upload.findOne({
+      hospitalNo: req.params.hospital_id,
+    });
+    if (patientScans) {
+      res.status(200).json({ scans: patientScans.scans });
+    } else {
+      res.status(204).json({ msg: "No such user exists" });
+    }
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
