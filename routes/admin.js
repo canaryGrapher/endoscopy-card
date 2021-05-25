@@ -571,7 +571,7 @@ router.post(
       //check if there was error in upload
       if (!upload.err) {
         //check if the request has an image or not
-        if (!req.file || req.file.length === 0 || req.file.length > 5) {
+        if (!req.file) {
           res.json({
             success: false,
             message: "You must provide at least 1 file",
