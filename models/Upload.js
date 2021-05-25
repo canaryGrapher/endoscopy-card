@@ -37,9 +37,6 @@ const UploadSchema = new mongoose.Schema({
         data: Buffer,
         contentType: String,
       },
-      MimeType: {
-
-      }
     },
   ],
 });
