@@ -267,7 +267,6 @@ const GenderArray = ["MALE", "FEMALE", "OTHER"];
 const Doctor = require("../models/Doctor");
 const Upload = require("../models/Upload");
 const Patient = require("../models/Patient");
-const { update } = require("../models/Doctor");
 
 // @route   POST api/admin/create/doctor
 // @desc    Create a new doctor account
