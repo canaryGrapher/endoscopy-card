@@ -268,6 +268,16 @@ const Doctor = require("../models/Doctor");
 const Upload = require("../models/Upload");
 const Patient = require("../models/Patient");
 
+router.get("/patients/all", auth, async (req, res) => {
+  try {
+    const allPatients = await Patient.find({});
+    res.status(200).json(allPatients);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 // @route   POST api/admin/create/doctor
 // @desc    Create a new doctor account
 // @access  Private
