@@ -1,38 +1,128 @@
-.App {
-  text-align: center;
+* {
+  margin: auto;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+:root {
+  --primary-color: #8c44b4;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+html {
+  font-family: 'Lato', sans-serif;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+body {
+  overflow-x: hidden;
+  color: var(--primary-color);
+}
+
+/* sign in styles */
+
+.my-form {
+  margin-top: 20rem;
+}
+
+/* landing page style */
+
+.manipal {
+  margin-top: -40px;
+  opacity: 0.4;
+}
+
+.extra-padding {
+  padding: 0px 10rem;
+}
+
+.extra-margin {
+  margin-top: -10rem;
+}
+
+.search-list {
+  position: absolute;
+  top: 4.5rem;
+}
+
+.search-item {
+  background-color: white;
+}
+
+.search-item:hover {
+  cursor: pointer;
+  color: white;
+  background-color: var(--primary-color);
+}
+
+/* button tab styles */
+
+.button-tab-button {
+  border-radius: 0;
+  border: 0.9px solid black;
+  border-bottom: var(--primary-color) 3px solid;
+}
+
+.button-tab-button:nth-child(1){
+  border-top-left-radius: 10px;
+}
+
+.button-tab-button:nth-child(4){
+  border-top-right-radius: 10px;
+}
+
+/* details page styles */
+
+.big-text-box {
+  width: 75rem;
+}
+
+.form-control:disabled{
+  background-color: transparent;
+}
+
+/* button styles */
+
+.dark-colour-button {
+  background-color: rgb(140, 68, 180, 0.9);
+  border-radius: 1rem;
+  border: none;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.dark-colour-button:hover {
+  color: rgb(39, 39, 39);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.colour-button {
+  background-color: rgb(140, 68, 180, 0.5);
+  border-radius: 1rem;
+  border: none;
+}
+
+/* scans designs */
+
+.scan-area {
+  padding-left: 10rem;
+  padding-right: 10rem;
+}
+
+/* media queries */
+
+@media only screen and (max-width: 800px){
+  .manipal{
+    margin-top: 0;
   }
-  to {
-    transform: rotate(360deg);
+  .my-form{
+    margin-top: 25rem;
+  }
+  .big-text-box{
+    width: 75vw;
+  }
+  .button-tab-button:nth-child(1){
+    border-top-left-radius: 0;
+  }
+  .scan-area{
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .button-tab-button:nth-child(4){
+    border-top-right-radius: 0;
   }
 }
